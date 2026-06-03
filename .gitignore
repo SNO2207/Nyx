@@ -1,0 +1,16 @@
+node_modules/
+release/
+tmp*/
+
+*.log
+server.err.log
+server.out.log
+
+.env
+.env.*
+*.local
+
+*.tmp
+*.cache
+Thumbs.db
+Desktop.ini

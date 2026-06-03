@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nyx</title>
+    <link rel="icon" type="image/png" href="assets/nyx-icon.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="mark-shell" aria-hidden="true">
+            <img class="mark" src="assets/nyx-icon.png" alt="" />
+          </span>
+          <div>
+            <h1>Nyx</h1>
+            <p id="dumpPath">No dump selected</p>
+          </div>
+        </div>
+        <nav class="topnav" aria-label="Dump sections">
+          <button class="nav-button active" data-section="classes">Classes</button>
+          <button class="nav-button" data-section="structs">Structs</button>
+          <button class="nav-button" data-section="functions">Functions</button>
+          <button class="nav-button" data-section="enums">Enums</button>
+          <button class="nav-button" data-section="offsets">Offsets</button>
+          <button class="nav-button" data-section="global">Search</button>
+        </nav>
+        <div class="actions">
+          <button id="reloadButton" class="ghost-button" title="Reload dump" aria-label="Reload dump">Reload</button>
+          <button id="uploadButton" class="primary-button">Open Dump</button>
+          <input id="fileInput" type="file" multiple accept=".json,application/json" hidden />
+        </div>
+      </header>
+
+      <section class="workspace-tabs" aria-label="Workspace tabs">
+        <div id="tabList" class="tab-list" role="tablist" aria-label="Open workspaces"></div>
+        <button id="newTabButton" class="tab-add-button" title="New tab" aria-label="New tab">+</button>
+      </section>
+
+      <main class="shell">
+        <aside class="sidebar" id="sidebar">
+          <div class="sidebar-head">
+            <h2 id="sidebarTitle">Classes</h2>
+            <span id="sectionCount">0</span>
+          </div>
+          <label class="searchbox">
+            <span aria-hidden="true">/</span>
+            <input id="filterInput" type="search" placeholder="Search..." autocomplete="off" />
+          </label>
+          <div id="list" class="list" role="listbox" aria-label="Dump entries"></div>
+        </aside>
+
+        <section class="content" id="content">
+          <div class="empty-state">
+            <h2>Select a Dumper7 dump</h2>
+            <p>Choose the folder that contains the Dumper7 JSON files.</p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <span>Nyx</span>
+        <span id="footerStats">No dump loaded</span>
+        <span>Desktop ready</span>
+      </footer>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>

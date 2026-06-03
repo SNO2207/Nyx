@@ -1,0 +1,83 @@
+{
+  "name": "nyx",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nyx local Dumper7 Unreal Engine dump viewer",
+  "author": "Nyx",
+  "main": "electron-main.js",
+  "scripts": {
+    "dist": "electron-builder --win portable nsis msi",
+    "electron": "electron .",
+    "electron:dump": "electron . \"C:/Dumper-7/5.5.4-1627709-Hemingway/Dumpspace\"",
+    "start": "node server.js",
+    "start:dump": "node server.js \"C:/Dumper-7/5.5.4-1627709-Hemingway/Dumpspace\""
+  },
+  "build": {
+    "appId": "com.nyx.viewer",
+    "productName": "Nyx",
+    "asar": false,
+    "afterPack": "scripts/after-pack.js",
+    "toolsets": {
+      "winCodeSign": "1.1.0"
+    },
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "app.js",
+      "assets/**/*",
+      "electron-main.js",
+      "index.html",
+      "package.json",
+      "server.js",
+      "styles.css"
+    ],
+    "win": {
+      "icon": "assets/nyx-icon.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "msi",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "Nyx-${version}-portable.${ext}"
+    },
+    "nsis": {
+      "artifactName": "Nyx-${version}-setup.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Nyx"
+    },
+    "msi": {
+      "artifactName": "Nyx-${version}-installer.${ext}"
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "electron": "^42.3.2",
+    "electron-builder": "^26.8.1",
+    "rcedit": "^5.0.2"
+  }
+}
