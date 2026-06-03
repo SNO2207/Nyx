@@ -2,7 +2,9 @@
 
 Nyx is a dark, tabbed desktop viewer for Dumper7 Unreal Engine JSON dumps. It gives you a fast local workspace for browsing classes, structs, functions, enums, offsets, inheritance graphs, and generated MDK-style output.
 
-![Nyx icon](assets/nyx-icon.png)
+<p align="center">
+  <img src="assets/nyx-icon.png" alt="Nyx icon" width="128" />
+</p>
 
 ## Features
 
