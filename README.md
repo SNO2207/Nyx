@@ -10,6 +10,7 @@ Nyx is a dark, tabbed desktop viewer for Dumper7 Unreal Engine JSON dumps. It gi
 
 - Browse Dumper7 classes, structs, functions, enums, and offsets.
 - Keep multiple investigation tabs open at once, each with its own selected item, mode, filters, and search state.
+- Open referenced classes and structs from member tables, inheritance, functions, and MDK views in new workspace tabs.
 - Search globally across names, members, params, flags, enum values, offsets, and inheritance.
 - Inspect class inheritance with a graph view.
 - View structured tables or generated MDK-style declarations.
@@ -80,9 +81,9 @@ npm run dist
 
 Artifacts are written to `release/`:
 
-- `Nyx-1.0.0-portable.exe`
-- `Nyx-1.0.0-setup.exe`
-- `Nyx-1.0.0-installer.msi`
+- `Nyx-1.0.1-portable.exe`
+- `Nyx-1.0.1-setup.exe`
+- `Nyx-1.0.1-installer.msi`
 
 Local release artifacts are unsigned unless a Windows code-signing certificate is configured, so Windows SmartScreen may warn on first launch.
 

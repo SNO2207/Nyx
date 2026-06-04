@@ -747,6 +747,35 @@ th.mono,
   color: #ddd6fe;
 }
 
+.symbol-link {
+  display: inline;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(232, 121, 249, .48);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.symbol-link:hover {
+  color: #f0d6ff;
+  text-decoration-color: var(--accent-3);
+}
+
+.symbol-link.type-struct:hover {
+  color: #b8fff3;
+}
+
+.stat .symbol-link {
+  font-weight: 800;
+}
+
 .overview-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

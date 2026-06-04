@@ -345,6 +345,7 @@ function hydrateDump(files, source, loadedAt) {
     }
   };
   dump.classIndex = buildClassIndex(dump.classes);
+  dump.symbolIndex = buildSymbolIndex(dump.classes, dump.structs);
 
   state.dump = dump;
   state.loading = false;
@@ -394,6 +395,13 @@ function buildClassIndex(classes) {
   }
 
   return { byName, childrenByParent };
+}
+
+function buildSymbolIndex(classes, structs) {
+  return {
+    classes: new Map(classes.map((item) => [item.name, item])),
+    structs: new Map(structs.map((item) => [item.name, item]))
+  };
 }
 
 function parseEntities(json, kind) {
@@ -704,6 +712,7 @@ function renderEntity(item) {
   `;
   bindModeButtons();
   bindClassJumpButtons();
+  bindSymbolLinks();
 }
 
 function renderEntityMode(item, mode) {
@@ -716,7 +725,7 @@ function renderEntityMode(item, mode) {
       <div class="overview-grid">
         <div class="info-box">
           <h3>Inheritance</h3>
-          ${item.inherit.length ? `<ul>${item.inherit.map((name) => `<li>${escapeHtml(name)}</li>`).join("")}</ul>` : "<p>None</p>"}
+          ${item.inherit.length ? `<ul>${item.inherit.map((name) => `<li>${renderSymbolReference(name)}</li>`).join("")}</ul>` : "<p>None</p>"}
         </div>
         <div class="info-box">
           <h3>Layout</h3>
@@ -732,7 +741,7 @@ function renderEntityMode(item, mode) {
   }
 
   if (mode === "mdk") {
-    return `<pre>${escapeHtml(entityToMdk(item))}</pre>`;
+    return `<pre>${renderLinkedSymbolText(entityToMdk(item))}</pre>`;
   }
 
   return `
@@ -749,7 +758,7 @@ function renderEntityMode(item, mode) {
       <tbody>
         ${item.members.map((member) => `
           <tr>
-            <td class="${typeClass(member.kind)}">${escapeHtml(member.type)}</td>
+            <td class="${typeClass(member.kind)}">${renderTypeInfo(member.typeInfo, member.type)}</td>
             <td>${escapeHtml(member.name)}</td>
             <td class="mono">${formatOffset(member.offset, member.name)}</td>
             <td class="mono">${hex(member.size)}</td>
@@ -986,6 +995,103 @@ function bindClassJumpButtons() {
   });
 }
 
+function bindSymbolLinks() {
+  els.content.querySelectorAll("[data-symbol-section][data-symbol-name]").forEach((button) => {
+    button.addEventListener("click", () => {
+      openSymbolInNewTab(button.dataset.symbolSection, button.dataset.symbolName);
+    });
+  });
+}
+
+function openSymbolInNewTab(section, name) {
+  if (!state.dump || state.loading || !section || !name) return;
+  if (!["classes", "structs"].includes(section)) return;
+
+  const items = sectionItems(section);
+  if (!items.some((item) => item.name === name)) return;
+
+  saveActiveTab();
+  const selected = { ...state.selected, [section]: name };
+  const tab = createWorkspaceTab({
+    section,
+    selected,
+    mode: { ...state.mode },
+    filter: "",
+    globalQuery: "",
+    globalFilters: { ...state.globalFilters }
+  });
+  tab.selected = selectedStateForDump(state.dump, tab.selected);
+  state.tabs.push(tab);
+  state.activeTabId = tab.id;
+  loadTabState(tab);
+  renderAll();
+}
+
+function symbolTarget(name, typeKind = "") {
+  if (!state.dump?.symbolIndex || !name) return null;
+
+  if (typeKind === "C") {
+    return state.dump.symbolIndex.classes.has(name) ? { section: "classes", name } : null;
+  }
+  if (typeKind === "S") {
+    return state.dump.symbolIndex.structs.has(name) ? { section: "structs", name } : null;
+  }
+
+  if (state.dump.symbolIndex.classes.has(name)) return { section: "classes", name };
+  if (state.dump.symbolIndex.structs.has(name)) return { section: "structs", name };
+  return null;
+}
+
+function renderSymbolReference(name, typeKind = "", extraClass = "") {
+  const target = symbolTarget(name, typeKind);
+  if (!target) return escapeHtml(name);
+
+  const typeStyle = target.section === "classes" ? "type-class" : "type-struct";
+  const classes = ["symbol-link", typeStyle, extraClass].filter(Boolean).join(" ");
+  return `<button type="button" class="${classes}" data-symbol-section="${escapeAttr(target.section)}" data-symbol-name="${escapeAttr(target.name)}" title="Open ${escapeAttr(target.name)} in a new tab">${escapeHtml(name)}</button>`;
+}
+
+function renderTypeInfo(info, fallback = "") {
+  if (!Array.isArray(info)) return escapeHtml(fallback);
+
+  const [base, typeKind, modifier, generics] = info;
+  const baseText = base ? renderSymbolReference(base, typeKind) : "";
+  const genericText = Array.isArray(generics) && generics.length
+    ? `&lt;${generics.map((generic) => renderTypeInfo(generic)).join(", ")}&gt;`
+    : "";
+  return `${baseText}${genericText}${escapeHtml(modifier || "")}`;
+}
+
+function renderFunctionSignature(fn) {
+  const params = fn.params.map(renderFunctionParam).join(", ");
+  return `${renderTypeInfo(fn.returnTypeInfo, fn.returnType)} ${escapeHtml(fn.name)}(${params});`;
+}
+
+function renderFunctionParam(param) {
+  return [
+    renderTypeInfo(param.typeInfo, param.type),
+    param.modifier ? escapeHtml(param.modifier) : "",
+    param.name ? escapeHtml(param.name) : ""
+  ].filter(Boolean).join(" ");
+}
+
+function renderLinkedSymbolText(text) {
+  const value = String(text ?? "");
+  const tokenPattern = /\b[A-Za-z_][A-Za-z0-9_]*\b/g;
+  let result = "";
+  let lastIndex = 0;
+
+  for (const match of value.matchAll(tokenPattern)) {
+    const token = match[0];
+    const index = match.index || 0;
+    result += escapeHtml(value.slice(lastIndex, index));
+    result += symbolTarget(token) ? renderSymbolReference(token) : escapeHtml(token);
+    lastIndex = index + token.length;
+  }
+
+  return result + escapeHtml(value.slice(lastIndex));
+}
+
 function renderFunctions(owner) {
   const mode = state.mode.functions || "params";
   const modes = ["params", "list", "mdk"];
@@ -1000,11 +1106,12 @@ function renderFunctions(owner) {
     <div class="panel">${renderFunctionsMode(owner, mode)}</div>
   `;
   bindModeButtons();
+  bindSymbolLinks();
 }
 
 function renderFunctionsMode(owner, mode) {
   if (mode === "mdk") {
-    return `<pre>${escapeHtml(functionsToMdk(owner))}</pre>`;
+    return `<pre>${renderLinkedSymbolText(functionsToMdk(owner))}</pre>`;
   }
 
   if (mode === "list") {
@@ -1021,7 +1128,7 @@ function renderFunctionsMode(owner, mode) {
         <tbody>
           ${owner.functions.map((fn) => `
             <tr>
-              <td class="${typeClass(fn.returnTypeInfo?.[1])}">${escapeHtml(fn.returnType)}</td>
+              <td class="${typeClass(fn.returnTypeInfo?.[1])}">${renderTypeInfo(fn.returnTypeInfo, fn.returnType)}</td>
               <td>${escapeHtml(fn.name)}</td>
               <td class="mono">${hex(fn.address)}</td>
               <td>${escapeHtml(fn.flags)}</td>
@@ -1034,7 +1141,7 @@ function renderFunctionsMode(owner, mode) {
 
   return owner.functions.map((fn) => `
     <section class="function-signature">
-      <code>${escapeHtml(functionSignature(fn))}</code>
+      <code>${renderFunctionSignature(fn)}</code>
       <div class="stats-row">
         <span class="stat">RVA <strong>${hex(fn.address)}</strong></span>
         <span class="stat">Params <strong>${fn.params.length}</strong></span>
@@ -1340,13 +1447,20 @@ function detailHead(item, stats) {
           <h2>${escapeHtml(item.name)}</h2>
           <span class="badge">${escapeHtml(item.kind)}</span>
         </div>
-        ${inherit.length ? `<div class="crumbs">${inherit.map((name, index) => `<span class="crumb">${index ? "<- " : ""}${escapeHtml(name)}</span>`).join("")}</div>` : ""}
+        ${inherit.length ? `<div class="crumbs">${inherit.map((name, index) => `<span class="crumb">${index ? "&lt;- " : ""}${renderSymbolReference(name)}</span>`).join("")}</div>` : ""}
         <div class="stats-row">
-          ${stats.map(([label, value]) => `<span class="stat">${escapeHtml(label)} <strong>${escapeHtml(String(value))}</strong></span>`).join("")}
+          ${stats.map(([label, value]) => `<span class="stat">${escapeHtml(label)} <strong>${statValueHtml(item, label, value)}</strong></span>`).join("")}
         </div>
       </div>
     </div>
   `;
+}
+
+function statValueHtml(item, label, value) {
+  if (label === "Parent" && item.parent) {
+    return renderSymbolReference(item.parent);
+  }
+  return escapeHtml(String(value));
 }
 
 function modeTabs(modes, active) {
